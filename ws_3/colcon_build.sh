@@ -11,7 +11,7 @@ BUILD_START=$(date +%s)
 # -----------------------------------------------------------------------------
 ROS_DISTRO="jazzy"
 QT6_PATH="/home/lzw/Qt/6.11.1/gcc_64"
-LLVM_BIN="/usr/lib/llvm-22/bin"
+LLVM_BIN="/opt/LLVM-22/bin"/
 
 # LLVM Toolchain binaries
 CC="${LLVM_BIN}/clang"
