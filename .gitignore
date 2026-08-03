@@ -1,4 +1,4 @@
-colcon_build.sh
+**/compile_commands.json
 
 # ROS2 colcon编译输出
 build/
