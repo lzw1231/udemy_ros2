@@ -1,0 +1,75 @@
+# ====================== 1. 安装URDF官方示例包 ======================
+# 提供URDF可视化launch文件、基础机器人模型案例
+sudo apt install ros-jazzy-urdf-tutorial
+
+# ====================== 2. TF2帧可视化 + RViz加载自定义URDF ======================
+# 安装tf2工具集，用于查看机器人坐标变换树
+sudo apt install ros-jazzy-tf2-tools
+# 生成tf坐标系pdf图谱，查看所有frame父子关系
+ros2 run tf2_tools view_frames
+# 启动官方URDF可视化launch，加载本地自定义机器人urdf模型到RViz
+ros2 launch urdf_tutorial display.launch.py model:=/home/lzw/Projects/gz_models/udemy/my_robot.urdf
+
+# ====================== 3. 关节状态发布工具 ======================
+# 安装关节状态发布器基础包
+sudo apt install ros-jazzy-joint-state-publisher
+# 启动带GUI滑块的关节控制器，手动拖动调节各关节角度
+ros2 run joint_state_publisher_gui joint_state_publisher_gui
+
+# ====================== 4. 话题/节点调试 + Xacro预编译URDF ======================
+# RViz加载自定义URDF
+ros2 launch urdf_tutorial display.launch.py model:=/home/lzw/Projects/gz_models/udemy/my_robot.urdf
+# 导出tf坐标系图谱，保存文件名为my_robot_frames.pdf
+ros2 run tf2_tools view_frames -o my_robot_frames
+# 打开rqt图形工具，查看节点通信拓扑图
+# rqt->Plugins->Introspection->NodeGraph
+# 列出当前所有运行话题
+ros2 topic list
+# 列出当前所有运行节点
+ros2 node list
+# 查看robot_state_publisher节点下全部参数
+ros2 param list /robot_state_publisher
+# 获取robot_state_publisher存储的机器人模型描述字符串(urdf源码)
+ros2 param get /robot_state_publisher robot_description
+# 实时打印robot_description话题发布的完整机器人模型
+ros2 topic echo /robot_description
+# 实时打印各关节角度状态数据
+ros2 topic echo /joint_states
+
+# 安装xacro宏工具、带GUI关节发布器、colcon编译扩展
+sudo apt install ros-jazzy-xacro
+sudo apt install ros-jazzy-joint-state-publisher-gui
+sudo apt install python3-colcon-common-extensions
+
+# 直接加载xacro转换后的机器人模型给robot_state_publisher
+ros2 run robot_state_publisher robot_state_publisher --ros-args -p robot_description:="$(xacro /home/lzw/Projects/gz_models/udemy/my_robot.urdf)"
+# 关节调节GUI
+ros2 run joint_state_publisher_gui joint_state_publisher_gui
+# 单独启动RViz可视化界面
+ros2 rviz2 rviz2
+
+# ====================== 5. 工作空间编译相关 ======================
+# 安装对应ROS发行版xacro（模板命令，替换<dostro>为jazzy）
+sudo apt install ros-<dostro>-xacro
+# colcon编译工作空间，软链接安装，修改源码无需重新编译
+colcon build --symlink-install
+# 读取节点内存储的机器人模型参数
+ros2 param get /robot_state_publisher robot_description
+
+# ====================== 6. ROS-Gazebo仿真环境安装与启动 ======================
+# 安装jazzy版本ros_gz桥接包，实现ROS2与Gazebo通信
+sudo apt install ros-jazzy-ros-gz
+
+# 解析xacro模型并传入机器人状态发布节点，发布机器人连杆TF与模型描述
+ros2 run robot_state_publisher robot_state_publisher --ros-args -p robot_description:="$(xacro my_robot.urdf.xacro)"
+
+# 启动Gazebo仿真，加载空白世界并自动启动仿真时钟(-r)
+ros2 launch ros_gz_sim gz_sim.launch.py gz_args:="empty.sdf -r"
+
+# 订阅robot_description话题，在Gazebo中生成机器人实体
+ros2 run ros_gz_sim create -topic robot_description 
+
+# 启动RViz可视化，加载指定路径下的配置文件
+ros2 run rviz2 rviz2 -d /home/lzw/Projects/udemy/ros2_ws/src/my_robot_description/rviz/urdf_config.rviz
+
+

@@ -1,0 +1,11 @@
+#Goal 目标
+int64 target_number
+float64 period
+---
+#Result 结果
+int64 reached_number
+---
+#Feedback 反馈
+int64 current_number
+
+

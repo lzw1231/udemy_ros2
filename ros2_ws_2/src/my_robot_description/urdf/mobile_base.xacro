@@ -1,0 +1,129 @@
+<?xml version="1.0"?>
+<!--
+    双差分驱动小车 XACRO 模型
+    组成：底盘base_link + 左右驱动轮 + 前部万向随动轮caster
+    使用xacro封装宏简化重复车轮连杆代码，内置标准几何体惯性宏
+    坐标系：base_footprint为地面基准固定坐标系，底盘、车轮均通过关节挂载其上
+    关节类型：驱动轮continuous连续旋转关节，底盘/随动轮为fixed固定关节
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <!-- 全局尺寸参数定义，统一修改车体大小 -->
+    <!-- 底盘长方体长宽高 -->
+    <xacro:property name="base_length" value="0.6" />
+    <xacro:property name="base_width" value="0.4" />
+    <xacro:property name="base_height" value="0.2" />
+    <!-- 驱动轮圆柱长度、半径 -->
+    <xacro:property name="wheel_length" value="0.05" />
+    <xacro:property name="wheel_radius" value="0.1" />
+
+    <!-- 车轮通用宏模板：生成单侧驱动轮连杆，prefix区分左/右轮 -->
+    <xacro:macro name="wheel_link" params="prefix">
+        <link name="${prefix}_wheel_link">
+            <!-- 可视化模型：RViz显示外观 -->
+            <visual>
+                <geometry>
+                    <cylinder radius="${wheel_radius}" length="${wheel_length}" />
+                </geometry>
+                <!-- 圆柱绕X轴旋转90度，让圆柱侧面贴合地面 -->
+                <origin xyz="0 0 0" rpy="${pi/2.0} 0 0" />
+                <material name="vibrant_orange" />
+            </visual>
+
+            <!-- 碰撞模型：Gazebo物理碰撞检测 -->
+            <collision>
+                <geometry>
+                    <sphere radius="${wheel_radius}" />
+                </geometry>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+            </collision>
+
+            <!-- xacro内置圆柱惯性宏：自动填充连杆质量、质心、转动惯量 -->
+            <xacro:cylinder_inertia m="1.0" r="${wheel_radius}" l="${wheel_length}" o_xyz="0 0 0" o_rpy="${pi/2.0} 0 0"/>
+        </link>
+    </xacro:macro>
+
+    <!-- 地面基准坐标系，无实体模型，作为车体根坐标 -->
+    <link name="base_footprint" />
+
+    <!-- 小车底盘主体连杆 -->
+    <link name="base_link">
+        <!-- 底盘可视化长方体 -->
+        <visual>
+            <geometry>
+                <box size="${base_length} ${base_width} ${base_height}" />
+            </geometry>
+            <!-- origin偏移使长方体底部对齐连杆坐标系原点 -->
+            <origin xyz="0 0 ${base_height/2.0}" rpy="0 0 0" />
+            <material name="deep_blue" />
+        </visual>
+        <!-- 碰撞模型：Gazebo物理碰撞检测 -->
+        <collision>
+            <geometry>
+                <box size="${base_length} ${base_width} ${base_height}" />
+            </geometry>
+            <origin xyz="0 0 ${base_height/2.0}" rpy="0 0 0" />
+        </collision>
+
+        <!-- 长方体惯性宏，底盘质量5kg -->
+        <xacro:box_inertia m="5.0" x="${base_length}" y="${base_width}" z="${base_height}" o_xyz="0 0 ${base_height/2.0}" o_rpy="0 0 0"/>
+    </link>
+
+    <!-- 实例化宏，生成右驱动轮、左驱动轮连杆 -->
+    <xacro:wheel_link prefix="right" />
+    <xacro:wheel_link prefix="left" />
+
+    <!-- 前部万向随动轮（球形无动力） -->
+    <link name="caster_wheel_link">
+        <visual>
+            <geometry>
+                <sphere radius="${wheel_radius/2.0}" />
+            </geometry>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <material name="vibrant_orange" />
+        </visual>
+
+        <collision>
+            <geometry>
+                <sphere radius="${wheel_radius/2.0}" />
+            </geometry>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+        </collision>
+
+        <!-- 球体惯性宏，随动轮质量0.5kg -->
+        <xacro:sphere_inertia m="0.5" r="${wheel_radius/2.0}" o_xyz="0 0 0" o_rpy="0 0 0"/>
+    </link>
+
+    <!-- 固定关节：地面基准footprint连接到底盘base_link -->
+    <!-- origin抬高一个车轮半径，让底盘离地，车轮接触地面 -->
+    <joint name="base_joint" type="fixed">
+        <parent link="base_footprint" />
+        <child link="base_link" />
+        <origin xyz="0 0 ${wheel_radius}" rpy="0 0 0" />
+    </joint>
+
+    <!-- 右驱动轮连续旋转关节，type=continuous无角度限位 -->
+    <!-- axis 0 1 0：绕Y轴旋转实现小车前进后退 -->
+    <joint name="base_right_wheel_joint" type="continuous">
+        <parent link="base_link" />
+        <child link="right_wheel_link" />
+        <origin xyz="${-base_length/4.0} ${-(base_width+wheel_length)/2} 0" rpy="0 0 0" />
+        <axis xyz="0 1 0" />
+    </joint>
+
+    <!-- 左驱动轮连续旋转关节 -->
+    <joint name="base_left_wheel_joint" type="continuous">
+        <parent link="base_link" />
+        <child link="left_wheel_link" />
+        <origin xyz="${-base_length/4.0} ${(base_width+wheel_length)/2} 0" rpy="0 0 0" />
+        <axis xyz="0 1 0" />
+    </joint>
+
+    <!-- 前部随动轮固定关节，无旋转自由度，仅起支撑作用 -->
+    <joint name="base_caster_wheel_joint" type="fixed">
+        <parent link="base_link" />
+        <child link="caster_wheel_link" />
+        <origin xyz="${base_length/3.0} 0 ${-wheel_radius/2.0}" rpy="0 0 0" />
+    </joint>
+
+</robot>

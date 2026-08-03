@@ -1,0 +1,22 @@
+<!-- 机器人URDF模型可视化启动文件 -->
+<launch>
+    <!-- 定义URDF模型文件路径变量 -->
+    <let name="urdf_path"
+         value="$(find-pkg-share my_robot_description)/urdf/my_robot.urdf.xacro" />
+
+    <!-- 定义RViz2预设配置文件路径变量 -->
+    <let name="rviz_config_path"
+         value="$(find-pkg-share my_robot_description)/rviz/urdf_config.rviz" />
+
+    <!-- 发布机器人连杆、关节TF坐标与robot_description模型参数 -->
+    <node pkg="robot_state_publisher" exec="robot_state_publisher">
+        <!-- xacro编译URDF并传入机器人模型描述参数 -->
+        <param name="robot_description" value="$(command 'xacro $(var urdf_path)')" />
+    </node>
+
+    <!-- 图形化关节控制节点，拖动滑块调节各关节角度 -->
+    <node pkg="joint_state_publisher_gui" exec="joint_state_publisher_gui" />
+
+    <!-- 启动RViz2可视化界面，加载预设显示配置，终端打印日志 -->
+    <node pkg="rviz2" exec="rviz2" output="screen" args="-d $(var rviz_config_path)" />
+</launch>

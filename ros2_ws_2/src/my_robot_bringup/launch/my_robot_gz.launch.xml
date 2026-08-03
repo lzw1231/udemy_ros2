@@ -1,0 +1,26 @@
+<launch>
+    <!-- 发布机器人状态，加载URDF/XACRO -->
+    <node pkg="robot_state_publisher" exec="robot_state_publisher">
+        <param name="robot_description"
+               value="$(command 'xacro $(find-pkg-share my_robot_description)/urdf/my_robot.urdf.xacro')"/>
+    </node>
+
+    <!-- 启动Gazebo仿真环境 -->
+    <include file="$(find-pkg-share ros_gz_sim)/launch/gz_sim.launch.py">
+        <arg name="gz_args"
+             value="$(find-pkg-share my_robot_bringup)/worlds/test_world.sdf -r"/>
+    </include>
+
+    <!-- 从robot_description话题生成模型到Gazebo -->
+    <node pkg="ros_gz_sim" exec="create" args="-topic robot_description"/>
+
+    <!-- ROS与Gazebo消息桥接 -->
+    <node pkg="ros_gz_bridge" exec="parameter_bridge">
+        <param name="config_file"
+               value="$(find-pkg-share my_robot_bringup)/config/ros_gz_bridge.yaml"/>
+    </node>
+
+    <!-- 启动RViz2并加载配置文件 -->
+    <node pkg="rviz2" exec="rviz2" output="screen"
+          args="-d $(find-pkg-share my_robot_description)/rviz/urdf_config.rviz"/>
+</launch>

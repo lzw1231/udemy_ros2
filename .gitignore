@@ -1,0 +1,23 @@
+colcon_build.sh
+
+# ROS2 colcon编译输出
+build/
+install/
+log/
+
+# 编辑器目录整体忽略
+.vscode/
+.idea/
+
+# Python运行缓存
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 编辑器、系统垃圾文件
+*~
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
