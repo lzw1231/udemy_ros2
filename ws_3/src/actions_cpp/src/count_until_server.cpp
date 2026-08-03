@@ -4,7 +4,6 @@
 
 using CountUntil = my_robot_interfaces::action::CountUntil;
 using CountUntilGoalHandle = rclcpp_action::ServerGoalHandle<CountUntil>;
-using namespace std::placeholders;
 
 class CountUntilServerNode : public rclcpp::Node {
 public :
@@ -12,9 +11,15 @@ public :
         count_until_server_ = rclcpp_action::create_server<CountUntil>(
             this,
             "count_until",
-            std::bind(&CountUntilServerNode::handle_goal_callback, this, _1, _2),
-            std::bind(&CountUntilServerNode::handle_cancel_callback, this, _1),
-            std::bind(&CountUntilServerNode::handle_accepted_callback, this, _1)
+            [this](const rclcpp_action::GoalUUID &goal_uuid, std::shared_ptr<const CountUntil::Goal> goal) {
+                return handle_goal_callback(goal_uuid, goal);
+            },
+            [this](const std::shared_ptr<CountUntilGoalHandle> goal_handle) {
+                return handle_cancel_callback(goal_handle);
+            },
+            [this](const std::shared_ptr<CountUntilGoalHandle> goal_handle) {
+                handle_accepted_callback(goal_handle);
+            }
         );
         RCLCPP_INFO(this->get_logger(), "Action server has been started");
     }

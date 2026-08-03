@@ -4,7 +4,6 @@
 
 using CountUntil = my_robot_interfaces::action::CountUntil;
 using CountUntilGoalHandle = rclcpp_action::ClientGoalHandle<CountUntil>;
-using namespace std::placeholders;
 
 class CountUntilClientNode : public rclcpp::Node {
 public :
@@ -21,11 +20,18 @@ public :
         goal.target_number = target_number;
         goal.period = period;
 
-        // Add callbacks
+        // Add callbacks：lambda替代std::bind，移除占位符依赖
         auto options = rclcpp_action::Client<CountUntil>::SendGoalOptions();
-        options.result_callback = std::bind(&CountUntilClientNode::goal_result_callback, this, _1);
-        options.goal_response_callback = std::bind(&CountUntilClientNode::goal_response_callback, this, _1);
-        options.feedback_callback = std::bind(&CountUntilClientNode::goal_feedback_callback, this, _1, _2);
+        options.result_callback = [this](const CountUntilGoalHandle::WrappedResult &result) {
+            goal_result_callback(result);
+        };
+        options.goal_response_callback = [this](const CountUntilGoalHandle::SharedPtr &goal_handle) {
+            goal_response_callback(goal_handle);
+        };
+        options.feedback_callback = [this](const CountUntilGoalHandle::SharedPtr &goal_handle,
+                                          const std::shared_ptr<const CountUntil::Feedback> &feedback) {
+            goal_feedback_callback(goal_handle, feedback);
+        };
 
         // Send the goal
         RCLCPP_INFO(this->get_logger(), "Sending goal with period %f", period);
@@ -40,7 +46,7 @@ private:
         RCLCPP_INFO(this->get_logger(), "Got feedback: %d", number);
     }
 
-    // Callback to know if the goal wa accepted or rejected
+    // Callback to know if the goal was accepted or rejected
     void goal_response_callback(const CountUntilGoalHandle::SharedPtr &goal_handle) {
         if (!goal_handle) {
             RCLCPP_WARN(this->get_logger(), "Goal got rejected!");
