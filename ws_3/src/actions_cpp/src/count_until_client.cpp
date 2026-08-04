@@ -51,10 +51,10 @@ public :
         RCLCPP_INFO(this->get_logger(), "Sending goal with period %f", period);
         count_until_client_->async_send_goal(goal, options);
 
-        // 2秒后发送取消请求
-        timer_ = this->create_wall_timer(std::chrono::seconds(2), [this]() {
-            timer_callback();
-        });
+        // 2秒后发送取消请求  <取消发送>的测试代码
+        // timer_ = this->create_wall_timer(std::chrono::seconds(2), [this]() {
+        //     timer_callback();
+        // });
     }
 
 private:
@@ -103,7 +103,7 @@ private:
     /**
      * @brief 结果回调（Result Callback）
      * @param result 服务端返回的最终结果封装对象
-     * @details 任务结束后触发：成功 / 中止 / 取消
+     * @details 任务结束后触发：SUCCEEDED / ABORTED / CANCELED
      */
     void goal_result_callback(const CountUntilGoalHandle::WrappedResult& result) {
         auto status = result.code;
@@ -114,6 +114,7 @@ private:
         } else if (status == rclcpp_action::ResultCode::CANCELED) {
             RCLCPP_WARN(this->get_logger(), "Canceled");
         }
+
 
         int reached_number = result.result->reached_number;
         RCLCPP_INFO(this->get_logger(), "Reached number %d", reached_number);
@@ -126,7 +127,7 @@ private:
 int main(int argc, char** argv) {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<CountUntilClientNode>();
-    node->send_goal(8, 1.0);
+    node->send_goal(6, 1.0);
     rclcpp::spin(node);
     rclcpp::shutdown();
     return 0;

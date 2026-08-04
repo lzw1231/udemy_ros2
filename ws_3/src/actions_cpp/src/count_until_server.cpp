@@ -49,20 +49,34 @@ private:
     //
     rclcpp::CallbackGroup::SharedPtr cb_group_;
 
+    std::shared_ptr<CountUntilGoalHandle> goal_handle_;
+
+    std::mutex mutex_;
+
     /**
      * @brief 目标接收回调 Goal Callback
      * @param goal_uuid 目标唯一UUID标识
      * @param goal 客户端发送的目标请求数据
      * @return GoalResponse 返回 REJECT / ACCEPT_AND_EXECUTE / ACCEPT_AND_DEFER
      * @details 客户端调用async_send_goal()后首先触发该回调
-     *          可在此校验目标参数合法性
-     *          决定是否接纳本次目标任务
+     *          可在此校验目标参数合法性,决定是否接纳本次目标任务
      */
     rclcpp_action::GoalResponse handle_goal_callback(const rclcpp_action::GoalUUID& goal_uuid,
                                                      std::shared_ptr<const CountUntil::Goal> goal) {
         (void)goal_uuid;
-
         RCLCPP_INFO(this->get_logger(), "Received a goal");
+
+        //Polic: refuse new goal if one goal is being active
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            if (goal_handle_) {
+                if (goal_handle_->is_active()) {
+                    RCLCPP_INFO(this->get_logger(), "A goal is active, reject new goal");
+                    return rclcpp_action::GoalResponse::REJECT;
+                }
+            }
+        }
+
 
         if (goal->target_number <= 0) {
             RCLCPP_WARN(this->get_logger(), "Rejecting the goal");
@@ -99,9 +113,14 @@ private:
      * @brief 任务主执行函数
      * @param goal_handle 当前任务句柄
      * @details 实现具体业务逻辑，循环发送反馈
-     *          建议增加goal_handle->is_canceling()检测处理取消请求
      */
     void execute_goal(const std::shared_ptr<CountUntilGoalHandle> goal_handle) {
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            this->goal_handle_ = goal_handle;
+        }
+
+
         //Get request from goal
         int target_number = goal_handle->get_goal()->target_number;
         double period = goal_handle->get_goal()->period;
