@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================================
-# Clean LLVM-based build script for a ROS 2 workspace.
-# Single user local machine, Clang-22 + lld, Ninja + bear
+# Clean LLVM-Based Build Script for ROS 2 Workspace
+# Single-user Local Machine, Clang-22 + lld, Ninja + bear
 # =============================================================================
 
 BUILD_START=$(date +%s)
@@ -11,7 +11,7 @@ BUILD_START=$(date +%s)
 # -----------------------------------------------------------------------------
 ROS_DISTRO="jazzy"
 QT6_PATH="/home/lzw/Qt/6.11.1/gcc_64"
-LLVM_BIN="/opt/LLVM-22/bin"/
+LLVM_BIN="/opt/LLVM-22/bin"
 
 # LLVM Toolchain binaries
 CC="${LLVM_BIN}/clang"
@@ -61,8 +61,6 @@ if [ ! -f "$ROS_SETUP" ]; then
 fi
 source "$ROS_SETUP"
 
-
-# 重置前缀路径为系统路径，移除旧工作空间路径，避免警告
 export AMENT_PREFIX_PATH="/opt/ros/${ROS_DISTRO}"
 export CMAKE_PREFIX_PATH="/opt/ros/${ROS_DISTRO}"
 # -----------------------------------------------------------------------------
@@ -130,4 +128,4 @@ fi
 # -----------------------------------------------------------------------------
 # Finish
 # -----------------------------------------------------------------------------
-echo -e "\n\033[1;32m[BUILD SUCCESS] Workspace compilation finished. Duration: ${DURATION}s\033[0m"
+echo -e "\n${GREEN}${BOLD}[BUILD SUCCESS] Workspace compilation finished. Duration: ${DURATION}s${NC}"
