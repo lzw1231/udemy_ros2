@@ -1,5 +1,7 @@
 from setuptools import find_packages, setup
 
+from src import actions_py
+
 package_name = 'actions_py'
 
 setup(
@@ -25,7 +27,8 @@ setup(
     entry_points={
         'console_scripts': [
             'count_until_client = actions_py.count_until_client:main',
-            'count_until_server = actions_py.count_until_server:main'
+            'count_until_server = actions_py.count_until_server:main',
+            'move_robot_server = actions_py.move_robot_server:main'
         ],
     },
 )

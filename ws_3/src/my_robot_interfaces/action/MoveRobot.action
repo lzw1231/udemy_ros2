@@ -1,0 +1,8 @@
+int64 position  # 位置 m
+int64 velocity # 速度 m/s
+---
+int64 position
+string message
+---
+int64 current_position
+
