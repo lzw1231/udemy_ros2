@@ -19,6 +19,7 @@ public :
      * 创建ROS2节点并初始化Action服务端
      */
     CountUntilServerNode() : Node("count_until_server") {
+        cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
         goal_queue_thread_ = std::thread([this]() { run_goal_queue_thread(); });
 
         // 创建Action服务端
@@ -34,7 +35,7 @@ public :
             // Accepted Callback：目标通过确认回调(ACCEPT_AND_EXECUTE模式)
             [this](const std::shared_ptr<CountUntilGoalHandle> goal_handle) { handle_accepted_callback(goal_handle); },
             rcl_action_server_get_default_options(),
-            this->create_callback_group(rclcpp::CallbackGroupType::Reentrant)
+            cb_group_
         );
         RCLCPP_INFO(this->get_logger(), "Action server has been started");
     }
@@ -160,6 +161,8 @@ private:
 
     std::queue<std::shared_ptr<CountUntilGoalHandle>> goal_queue_;
     std::thread goal_queue_thread_;
+    //!< 回调组，隔离Action回调，避免阻塞节点主循环
+    rclcpp::CallbackGroup::SharedPtr cb_group_;
 };
 
 /**
