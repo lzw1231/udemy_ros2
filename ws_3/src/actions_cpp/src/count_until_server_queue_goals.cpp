@@ -20,9 +20,8 @@ public :
      */
     CountUntilServerNode() : Node("count_until_server") {
         cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
-        goal_queue_thread_ = std::thread([this]() { run_goal_queue_thread(); });
 
-        // 创建Action服务端
+        // 构造函数，创建Action服务端
         count_until_server_ = rclcpp_action::create_server<CountUntil>(
             this, // 绑定当前节点
             "count_until", // Action话题名称
@@ -37,6 +36,9 @@ public :
             rcl_action_server_get_default_options(),
             cb_group_
         );
+
+        goal_queue_thread_ = std::thread([this]() { run_goal_queue_thread(); });
+
         RCLCPP_INFO(this->get_logger(), "Action server has been started");
     }
 
@@ -156,13 +158,14 @@ private:
     //!< CountUntil Action服务端，处理目标接收、执行与取消
     rclcpp_action::Server<CountUntil>::SharedPtr count_until_server_;
 
+    //!< 回调组，隔离Action回调，避免阻塞节点主循环
+    rclcpp::CallbackGroup::SharedPtr cb_group_;
+
     //!< 互斥锁，保护goal_handle_多线程并发访问
     std::mutex mutex_;
 
     std::queue<std::shared_ptr<CountUntilGoalHandle>> goal_queue_;
     std::thread goal_queue_thread_;
-    //!< 回调组，隔离Action回调，避免阻塞节点主循环
-    rclcpp::CallbackGroup::SharedPtr cb_group_;
 };
 
 /**
