@@ -1,7 +1,12 @@
 #!/bin/bash
 # =============================================================================
-# Clean LLVM-Based Build Script for ROS 2 Workspace
-# Single-user Local Machine, Clang-22 + lld, Ninja + bear
+# ROS2 Workspace Full Build Script
+# Toolchain: LLVM 22 (clang / clang++ / llvm-ar / llvm-ranlib / lld)
+# Build Backend: Ninja | Compile Database: bear
+#
+# Function: Full clean rebuild + generate standard compile_commands.json
+# Applicable: Local development environment, ROS2 Jazzy
+# Feature: Strict LLVM toolchain enforcement, LLD linking, Clang static checking
 # =============================================================================
 
 BUILD_START=$(date +%s)
