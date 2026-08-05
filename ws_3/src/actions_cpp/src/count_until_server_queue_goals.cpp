@@ -1,5 +1,6 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
+#include <queue>
 #include "my_robot_interfaces/action/count_until.hpp"
 
 // Action类型别名
@@ -18,7 +19,7 @@ public :
      * 创建ROS2节点并初始化Action服务端
      */
     CountUntilServerNode() : Node("count_until_server") {
-        cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
+        goal_queue_thread_ = std::thread([this]() { run_goal_queue_thread(); });
 
         // 创建Action服务端
         count_until_server_ = rclcpp_action::create_server<CountUntil>(
@@ -29,29 +30,20 @@ public :
                 return handle_goal_callback(goal_uuid, goal);
             },
             // Cancel Callback：取消请求回调
-            [this](const std::shared_ptr<CountUntilGoalHandle> goal_handle) {
-                return handle_cancel_callback(goal_handle);
-            },
+            [this](const std::shared_ptr<CountUntilGoalHandle> goal_handle) { return handle_cancel_callback(goal_handle); },
             // Accepted Callback：目标通过确认回调(ACCEPT_AND_EXECUTE模式)
-            [this](const std::shared_ptr<CountUntilGoalHandle> goal_handle) {
-                handle_accepted_callback(goal_handle);
-            },
+            [this](const std::shared_ptr<CountUntilGoalHandle> goal_handle) { handle_accepted_callback(goal_handle); },
             rcl_action_server_get_default_options(),
-            cb_group_
+            this->create_callback_group(rclcpp::CallbackGroupType::Reentrant)
         );
         RCLCPP_INFO(this->get_logger(), "Action server has been started");
     }
 
+    ~CountUntilServerNode() {
+        goal_queue_thread_.join();
+    }
+
 private:
-    //!< CountUntil Action服务端，处理目标接收、执行与取消
-    rclcpp_action::Server<CountUntil>::SharedPtr count_until_server_;
-
-    //!< 回调组，隔离Action回调，避免阻塞节点主循环
-    rclcpp::CallbackGroup::SharedPtr cb_group_;
-
-    //!< 互斥锁，保护goal_handle_多线程并发访问
-    std::mutex mutex_;
-
     /**
      * @brief 目标接收回调 Goal Callback
      * @param goal_uuid 目标唯一UUID标识
@@ -96,8 +88,34 @@ private:
      *          一般在此启动任务执行函数
      */
     void handle_accepted_callback(const std::shared_ptr<CountUntilGoalHandle> goal_handle) {
-        execute_goal(goal_handle);
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            goal_queue_.push(goal_handle);
+            RCLCPP_INFO(this->get_logger(), "Add goal to the queue");
+            RCLCPP_INFO(this->get_logger(), "Queue size: %lu", goal_queue_.size());
+        }
     };
+
+    void run_goal_queue_thread() {
+        rclcpp::Rate loop_rate(1000.0);
+        while (rclcpp::ok()) {
+            std::shared_ptr<CountUntilGoalHandle> next_goal_handle;
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                if (!goal_queue_.empty()) {
+                    next_goal_handle = goal_queue_.front();
+                    goal_queue_.pop();
+                }
+            }
+
+            if (next_goal_handle) {
+                RCLCPP_INFO(this->get_logger(), "Execute next goal in queue");
+                execute_goal(next_goal_handle);
+            }
+
+            loop_rate.sleep();
+        }
+    }
 
     /**
      * @brief 任务主执行函数
@@ -133,6 +151,15 @@ private:
         result->reached_number = counter;
         goal_handle->succeed(result);
     };
+
+    //!< CountUntil Action服务端，处理目标接收、执行与取消
+    rclcpp_action::Server<CountUntil>::SharedPtr count_until_server_;
+
+    //!< 互斥锁，保护goal_handle_多线程并发访问
+    std::mutex mutex_;
+
+    std::queue<std::shared_ptr<CountUntilGoalHandle>> goal_queue_;
+    std::thread goal_queue_thread_;
 };
 
 /**
