@@ -132,6 +132,7 @@ build_incremental() {
         --event-handlers console_direct+ status+ \
         --cmake-args \
             -G Ninja \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
             -DCMAKE_C_COMPILER="${CC}" \
             -DCMAKE_CXX_COMPILER="${CXX}" \
             -DCMAKE_AR="${AR}" \
@@ -140,8 +141,8 @@ build_incremental() {
             -DCMAKE_CXX_COMPILER_AR="${AR}" \
             -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" \
             -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld" \
-            -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld" \
-            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+            -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld"
+
 
     local status=$?
     if [ $status -ne 0 ]; then
@@ -149,21 +150,21 @@ build_incremental() {
         exit $status
     fi
 
-    # Merge all package-level compile_commands.json into root
-    if command -v jq &> /dev/null; then
-
-        # Find all subdir files, merge, filter, and deduplicate
-        find build/ -name "compile_commands.json" -exec cat {} \; | \
-            jq -s 'add | map(
-                select(
-                    (.directory | contains("CMakeScratch") | not) and
-                    (.directory | contains("CompilerId") | not)
-                )
-            ) | unique_by(.file)' > compile_commands.json
-        echo -e "${GREEN}[Incremental Build] Merged compile_commands.json created.${NC}"
-    else
-        echo -e "${YELLOW}[Incremental Build] jq not installed; cannot merge compile_commands.json.${NC}"
-    fi
+   # Merge all package‑level compile_commands.json into root
+   if command -v jq &> /dev/null; then
+       find build/ -name "compile_commands.json" -print0 | xargs -0 cat | \
+           jq -s 'add
+               | map(
+                   select(
+                       (.directory | contains("CMakeScratch") | not) and
+                       (.directory | contains("CompilerId") | not)
+                   )
+               )
+               | unique_by(.file)' > compile_commands.json
+       echo -e "${GREEN}[Incremental Build] Merged compile_commands.json created.${NC}"
+   else
+       echo -e "${YELLOW}[Incremental Build] jq not installed; cannot merge compile_commands.json.${NC}"
+   fi
 
     print_elapsed $start_time
 }

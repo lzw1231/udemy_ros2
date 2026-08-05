@@ -1,7 +1,5 @@
 from setuptools import find_packages, setup
 
-from src import actions_py
-
 package_name = 'actions_py'
 
 setup(
