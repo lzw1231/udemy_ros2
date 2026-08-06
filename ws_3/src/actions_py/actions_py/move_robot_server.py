@@ -5,7 +5,7 @@ import threading
 from examples_rclpy_minimal_action_server.server_not_composable import execute_callback
 from fontTools.varLib.instancer import __main__
 from rclpy.node import Node
-from rclpy.action import ActionServer, GoalResponse
+from rclpy.action import ActionServer, GoalResponse, CancelResponse
 from rclpy.action.server import ServerGoalHandle
 from my_robot_interfaces.action import MoveRobot
 from rclpy.executors import MultiThreadedExecutor
@@ -23,6 +23,7 @@ class MoveRobotServerNode(Node):
             MoveRobot,
             'move_robot',
             goal_callback=self.goal_callback,
+            cancel_callback=self.cancel_callback,
             execute_callback=self.execute_callback,
             callback_group=ReentrantCallbackGroup()
         )
@@ -43,6 +44,10 @@ class MoveRobotServerNode(Node):
         self.get_logger().info("Accept goal")
         return GoalResponse.ACCEPT
 
+    def cancel_callback(self, goal_handle: ServerGoalHandle):
+        self.get_logger().info("Received a cancel request")
+        return CancelResponse.ACCEPT
+
     def execute_callback(self, goal_handle: ServerGoalHandle):
         with self.goal_lock_:
             self.goal_handle_ = goal_handle
@@ -59,6 +64,12 @@ class MoveRobotServerNode(Node):
             if not goal_handle.is_active:
                 result.position = self.robot_position_
                 result.message = "Preempted by another goal"
+                return result
+
+            if goal_handle.is_cancel_requested:
+                result.position = self.robot_position_
+                result.message = "Canceled"
+                goal_handle.canceled()
                 return result
 
             diff = goal_position - self.robot_position_

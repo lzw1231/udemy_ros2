@@ -41,6 +41,10 @@ SCRIPT_PATH=$(readlink -f "$0")
 WS_ROOT=$(cd "$(dirname "$SCRIPT_PATH")" && pwd)
 cd "$WS_ROOT" || exit 1
 
+# 清除可能残留的工作区路径，避免警告
+unset AMENT_PREFIX_PATH
+unset CMAKE_PREFIX_PATH
+
 # Source ROS 2 environment
 source "/opt/ros/${ROS_DISTRO}/setup.bash"
 
