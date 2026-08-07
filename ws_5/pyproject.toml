@@ -1,0 +1,13 @@
+[tool.black]
+line-length = 150
+target-version = ["py312"]
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+import_order = [
+    "STDLIB",
+    "THIRDPARTY",
+    "FIRSTPARTY",
+    "LOCALFOLDER"
+]

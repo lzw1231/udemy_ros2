@@ -1,5 +1,5 @@
-#include "rclcpp/rclcpp.hpp"
 #include "example_interfaces/msg/int64.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 using namespace std::chrono_literals;
 
@@ -8,12 +8,11 @@ public:
     NumberPublisherNode() : Node("number_publisher") {
         number_ = 1;
         double publish_frequency = 1.0;
-        number_publisher_ = this->create_publisher<example_interfaces::msg::Int64>("number", 10);
+        number_publisher_ =
+            this->create_publisher<example_interfaces::msg::Int64>("number", 10);
         number_timer_ = this->create_wall_timer(
             std::chrono::milliseconds(static_cast<int>(1000.0 / publish_frequency)),
-            [this]() { this->publishNumber(); }
-        );
-
+            [this]() { this->publishNumber(); });
 
         RCLCPP_INFO(this->get_logger(), "Number publisher has been started.");
     }
@@ -26,11 +25,11 @@ private:
         number_++;
     }
 
-    rclcpp::Publisher<example_interfaces::msg::Int64>::SharedPtr number_publisher_;
+    rclcpp::Publisher<example_interfaces::msg::Int64>::SharedPtr
+    number_publisher_;
     rclcpp::TimerBase::SharedPtr number_timer_;
     int64_t number_;
 };
-
 
 int main(int argc, char** argv) {
     rclcpp::init(argc, argv);
