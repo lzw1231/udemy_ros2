@@ -14,6 +14,7 @@
 ROS_DISTRO="jazzy"
 QT6_PATH="/home/lzw/Qt/6.11.1/gcc_64"
 LLVM_BIN="/opt/LLVM-22/bin"
+CMAKE_BIN="/opt/cmake-4/bin/cmake"
 
 # LLVM Toolchain binaries
 CC="${LLVM_BIN}/clang"
@@ -32,9 +33,11 @@ NC='\033[0m'
 # -----------------------------------------------------------------------------
 # Prepare environment
 # -----------------------------------------------------------------------------
+export PATH="$(dirname ${CMAKE_BIN}):$PATH"
 export PATH="${LLVM_BIN}:$PATH"
 export LD_LIBRARY_PATH="${LLVM_BIN}/../lib:${LD_LIBRARY_PATH}"
 export CC CXX AR RANLIB
+
 
 # Detect workspace root (script location)
 SCRIPT_PATH=$(readlink -f "$0")
