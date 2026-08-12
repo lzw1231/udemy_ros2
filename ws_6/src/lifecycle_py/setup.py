@@ -22,6 +22,9 @@ setup(
         ],
     },
     entry_points={
-        "console_scripts": ["move_robot_server = lifecycle_py.move_robot_server:main"],
+        "console_scripts": [
+            "move_robot_server = lifecycle_py.move_robot_server:main",
+            "move_robot_startup = lifecycle_py.move_robot_startup:main",
+        ],
     },
 )

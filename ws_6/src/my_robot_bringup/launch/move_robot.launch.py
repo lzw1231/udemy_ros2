@@ -18,4 +18,10 @@ def generate_launch_description():
         parameters=[{"robot_name": "B"}],
     )
 
-    return LaunchDescription([node_a, node_b])
+    startup_node = Node(
+        package="lifecycle_py",
+        executable="move_robot_startup",
+        parameters=[{"managed_node_names": ["move_robot_server_a", "move_robot_server_b"]}],
+    )
+
+    return LaunchDescription([node_a, node_b, startup_node])
