@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import SingleThreadedExecutor
 from example_interfaces.msg import Int64
 
 
@@ -13,16 +14,27 @@ class NumberPublisherNode(Node):
         self.number_timer = self.create_timer(1.0 / self.publish_frequency_, self.publish_number)
         self.get_logger().info("Number publisher has been started.")
 
+    # Main callbacks in ROS2:
+    # - timers
+    # - subscribers
+    # - service servers
+    # - action servers
+    # - futures (in client)
+
     def publish_number(self):
-        msg = Int64
+        msg = Int64()
         msg.data = self.number_
+        self.number_publisher_.publish(msg)
         self.number_ += 1
 
 
 def main(args=None):
     rclpy.init(args=None)
     node = NumberPublisherNode()
-    rclpy.spin(node)
+    executor = SingleThreadedExecutor()
+    executor.add_node(node)
+    executor.spin()
+
     rclpy.shutdown()
 
 

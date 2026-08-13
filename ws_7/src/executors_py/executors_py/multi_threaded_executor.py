@@ -1,16 +1,22 @@
+#!/usr
 # !/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import MultiThreadedExecutor, SingleThreadedExecutor
 import time
-from rclpy.executors import SingleThreadedExecutor
+from rclpy.callback_groups import ReentrantCallbackGroup, MutuallyExclusiveCallbackGroup
 
 
 class Node1(Node):
     def __init__(self):
         super().__init__("node1")
-        self.timer1_ = self.create_timer(1.0, self.callback_timer1)
-        self.timer2_ = self.create_timer(1.0, self.callback_timer2)
-        self.timer3_ = self.create_timer(1.0, self.callback_timer3)
+
+        self.cb_group_a_ = MutuallyExclusiveCallbackGroup()
+        self.cb_group_b_ = MutuallyExclusiveCallbackGroup()
+
+        self.timer1_ = self.create_timer(1.0, self.callback_timer1, callback_group=self.cb_group_a_)
+        self.timer2_ = self.create_timer(1.0, self.callback_timer2, callback_group=self.cb_group_b_)
+        self.timer3_ = self.create_timer(1.0, self.callback_timer3, callback_group=self.cb_group_b_)
 
     def callback_timer1(self):
         time.sleep(2.0)
@@ -28,8 +34,9 @@ class Node1(Node):
 class Node2(Node):
     def __init__(self):
         super().__init__("node2")
-        self.timer4_ = self.create_timer(1.0, self.callback_timer4)
-        self.timer5_ = self.create_timer(1.0, self.callback_timer5)
+        self.cb_group_c_ = ReentrantCallbackGroup()
+        self.timer4_ = self.create_timer(1.0, self.callback_timer4, callback_group=self.cb_group_c_)
+        self.timer5_ = self.create_timer(1.0, self.callback_timer5, callback_group=self.cb_group_c_)
 
     def callback_timer4(self):
         time.sleep(2.0)
@@ -44,7 +51,7 @@ def main(args=None):
     rclpy.init(args=args)
     node1 = Node1()
     node2 = Node2()
-    executor = SingleThreadedExecutor()
+    executor = MultiThreadedExecutor()
     executor.add_node(node1)
     executor.add_node(node2)
     executor.spin()
