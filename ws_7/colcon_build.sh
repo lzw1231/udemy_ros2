@@ -47,6 +47,7 @@ COLCON_BUILD_ARGS=(
         -DCMAKE_RANLIB="${RANLIB}"
         -DCMAKE_C_COMPILER_AR="${AR}"
         -DCMAKE_CXX_COMPILER_AR="${AR}"
+        -DCMAKE_VERBOSE_MAKEFILE=OFF
         -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld"
         -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"
         -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld"
